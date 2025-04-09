@@ -19,6 +19,9 @@ gemini-2.5-pro-exp-03-25
 # QWEN
 qwen/qwen2.5-vl-72b-instruct:free
 
+
+# OpenRouter API's---------------------------------------------------------------------------
+
 # DeepSeek
 deepseek/deepseek-r1:free         EL MEJOR
 deepseek/deepseek-chat-v3-0324:free  SEGUNDO MEJOR pero a veces la información es imprecisa
@@ -26,6 +29,7 @@ deepseek-r1-zero     Es bueno pero a veces la información es imprecisa
 
 # Quasar Alpha (1 M de tokens)
 openrouter/quasar-alpha 
+---------------------------------------------------------------------------------------------
 
 '''
 
