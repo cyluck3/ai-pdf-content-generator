@@ -56,13 +56,13 @@ prompt = ChatPromptTemplate.from_messages([
 
 chain = prompt | llm
 
-# --- PDF Generation Functions ---
+# --- Función para generar PDF ---
 def create_pdf(filename, title, content_data):
     """Creates a PDF document with the given title and content."""
     doc = SimpleDocTemplate(filename, pagesize=letter)
     styles = getSampleStyleSheet()
 
-    # Define custom styles
+    # Definir estilos personalizado
     title_style = ParagraphStyle(
         'TitleStyle',
         parent=styles['Heading1'],
@@ -83,7 +83,7 @@ def create_pdf(filename, title, content_data):
     normal_style = styles['Normal']
     normal_style.fontSize = 12
     normal_style.spaceAfter = 0.1 * inch
-    normal_style.alignment = TA_JUSTIFY  # Justify the text
+    normal_style.alignment = TA_JUSTIFY  # Justificar texto
 
     story = []
     story.append(Paragraph(title, title_style))
@@ -97,7 +97,7 @@ def create_pdf(filename, title, content_data):
     doc.build(story)
 
 
-# --- Main Function ---
+# --- Función principal ---
 async def runai():
     print("Welcome to the Google AI Prompt Generator!")
 
@@ -154,7 +154,7 @@ async def runai():
 
                 print(title_value, "TITULO")
 
-                # --- Prepare data for PDF ---
+                # --- Preparar contenido para el PDF ---
                 pdf_content_data = {}
 
                 for i, element in enumerate(response_json.values()):
@@ -162,7 +162,7 @@ async def runai():
                     agent2_instruction = (
                         f"{element}\n"
                         f"You are a professional writer. Write high-quality paragraphs, avoid lists, and do not use markdown. "
-                        f"Consider the previous prompt that was already covered, don't repeat things covere in the prompt: '{previous_prompt}', this is only given to maintain context."
+                        f"Consider the previous prompt that was already covered, don't repeat things covered in this prompt: '{previous_prompt}', this is only given to maintain context."
                     )
 
                     agent2_response = await agent2.add_instruction(agent2_instruction + "\nEscribe en español.")
@@ -172,25 +172,37 @@ async def runai():
                         pdf_content_data[subtitle] = agent2_response
 
                         print(agent2_response + "\n\n")
-
                         previous_prompt = element
 
                     else:
                         print(f"Error: agent2 did not return a response for prompt {i+1}. Skipping this prompt.")
 
-                # Se crean las carpetas docs/pdf si no existe
-                os.makedirs("./docs/pdf/", exist_ok=True)
 
-                # --- Generate PDF File ---
-                pdf_filename = "./docs/pdf/" + title_value + ".pdf"
+
+                # Guardar en Documentos del sistema operativo
+                # Obtener la ruta de la carpeta "Documentos"
+                documentos_path = os.path.join(os.path.expanduser("~"), "Documents\\Docsaicg\\pdf")
+
+                # Asegurarse de que la carpeta existe (por si acaso)
+                if not os.path.exists(documentos_path):
+                    os.makedirs(documentos_path)  # Crear la carpeta si no existe
+
+                print(documentos_path, "DOCUMENTOS PATH")
+
+                # Se crean las carpetas docs/pdf si no existen, directorios personalizados en el mismo proyecto
+                # os.makedirs("./docs/pdf/", exist_ok=True) 
+
+                # --- Generar archivo PDF ---
+                pdf_filename = documentos_path + "\\" + title_value + ".pdf"
                 print("Generating PDF file: ", pdf_filename, "...")
                 create_pdf(pdf_filename, title_value, pdf_content_data)
 
-                # Rename the file to include the title in the tab webbrowser. Otherwise the tab will be "(anonymous)"
-                new_pdf_filename = "./docs/pdf/" + title_value + ".pdf"
+                # Renombrar el archivo para evitar que se muestre como "(anonymous)" en el header tab del navegador al abrirlo
+                # Construir la nueva ruta del archivo
+                new_pdf_filename = os.path.join(documentos_path, title_value + ".pdf")
                 os.rename(pdf_filename, new_pdf_filename) #rename the file once it has been saved to ensure the file has the right name
-                
-                print("Your plan has been created and executed successfully.")
+               
+                print(f"Tu documento sobre {title_value}, ha sido creado y guardado exitosamente.")
 
             except json.JSONDecodeError as e:
                 print(response.content)
