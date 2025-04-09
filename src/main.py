@@ -177,8 +177,6 @@ async def runai():
                     else:
                         print(f"Error: agent2 did not return a response for prompt {i+1}. Skipping this prompt.")
 
-
-
                 # Guardar en Documentos del sistema operativo
                 # Obtener la ruta de la carpeta "Documentos"
                 documentos_path = os.path.join(os.path.expanduser("~"), "Documents\\Docsaicg\\pdf")
