@@ -7,8 +7,7 @@ from dotenv import load_dotenv
 
 load_dotenv(dotenv_path="config.env")
 
-### Este script envía un texto a la API de Google Gemini y recibe un análisis literario del mismo.
-
+### Este script envía un texto a alguna API de IA, y sirve para crear chatbots, y apilar consultas 
 ''' 
 LISTA DE MODELOS GRATIS:
 
