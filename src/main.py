@@ -97,7 +97,7 @@ def create_pdf(filename, title, content_data):
     doc.build(story)
 
 
-# --- Función principal ---
+# --- Función principal para chat con agente interactivo (Modo True) ---
 async def runai():
     print("Welcome to the Google AI Prompt Generator!")
 
@@ -209,6 +209,7 @@ async def runai():
             print(f"An error occurred: {e}")
             print("Please try again.")
 
+# --- Función para procesamiento de archivos de texto (Modo False)
 async def runaiload():
     directorio = './inputs/'
     archivos = os.listdir(directorio)
@@ -268,7 +269,6 @@ async def runaiload():
 
             last_key = list(response_json.keys())[-1]
             del response_json[last_key]
-            print(response_json)
 
             print(title_value, "TITULO")
 
@@ -286,7 +286,7 @@ async def runaiload():
                     subtitle = list(response_json.keys())[i]
                     pdf_content_data[subtitle] = agent2_response
 
-                    print(agent2_response + "\n\n")
+                    # print(agent2_response + "\n\n")
                     previous_prompt = element
 
                 else:
@@ -299,8 +299,6 @@ async def runaiload():
             # Asegurarse de que la carpeta existe (por si acaso)
             if not os.path.exists(documentos_path):
                 os.makedirs(documentos_path)  # Crear la carpeta si no existe
-
-            print(documentos_path, "DOCUMENTOS PATH")
 
             # Se crean las carpetas docs/pdf si no existen, directorios personalizados en el mismo proyecto
             # os.makedirs("./docs/pdf/", exist_ok=True) 
