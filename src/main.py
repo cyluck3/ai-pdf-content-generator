@@ -209,5 +209,123 @@ async def runai():
             print(f"An error occurred: {e}")
             print("Please try again.")
 
+async def runaiload():
+    directorio = './inputs/'
+    archivos = os.listdir(directorio)
+
+    archivosleidos = [] # Esto almacena el contenido de cada archivo leído, necesito por tanto que este modo sea capaz de generar un pdf para cada archivo de texto
+
+    for archivo in archivos:
+        if archivo.endswith('.txt'):
+            ruta_archivo = os.path.join(directorio, archivo)
+            with open(ruta_archivo, 'r') as file:
+                contenido = file.read()
+                # print(f'Contenido del archivo {archivo}:')
+                archivosleidos.append(contenido)
+                # print(contenido)
+                # print('------------------------')
+
+
+    for texto in archivosleidos:
+            
+        SYSTEM_PROMPTCU = """
+    You are a master prompt engineer. Your task is to analyze a given text and create a well-structured JSON dictionary of 10 prompts for a series of writing tasks, as a researcher and writer. 
+    The output should be a JSON dictionary with keys ("title for the prompt 1", "title for the prompt 2", "title for the prompt 3", etc.) and corresponding prompts as values. The last key-value will be a title for the subject covered for all the prompts.
+    The prompts should be ordered sequentially. Do not include any markdown or additional text outside of the JSON dictionary, you will ONLY response with the JSON dictionary, in Spanish.
+
+    Example of the JSON dictionary:
+    {{
+        "subtitle 1": "Write a detailed introduction about...",
+        "subtitle 2": "Expand on the main points...",
+        "subttile 3": "...",
+        ...
+        "subtitle n": "Conclude the text by",
+        "title": "general title for the subject"
+    }}
+
+        The text to process its the next one: 
+    """
+        try:
+            agente = flowtask("procesador-carga-texto", MODEL_NAME_MAIN)  
+            agente2 = flowtask("prompt-processor", MODEL_NAME_AGENT2)
+            
+
+            # --- Registrar el penúltimo prompt procesado para mantener contexto de lo que ya se explicó antes
+            previous_prompt = ""
+            
+            # --- Preparar contenido para el PDF ---
+            pdf_content_data = {}
+
+            resa = await agente.add_instruction(SYSTEM_PROMPTCU + texto) # prompt for customizing info process mode and generating list of prompts
+
+            fresponse = resa.replace("`", "").replace("json", "").replace("```", "")
+            response_json = json.loads(fresponse)
+            print("Plan designed for you:", fresponse, "\n\nExecuting the plan...")
+
+            title = list(response_json.items())[-1]
+            title_value = title[1]
+            title_value = title_value.replace(":", ",").replace("*", "").replace('"', "") #eliminar posibles caracteres especiales prohibidos para nombres de archivo que impidan un guardado exitoso
+
+            last_key = list(response_json.keys())[-1]
+            del response_json[last_key]
+            print(response_json)
+
+            print(title_value, "TITULO")
+
+            for i, element in enumerate(response_json.values()):
+                print(f"Procesando Prompt {i+1}: {element}...")
+                agent2_instruction = (
+                    f"{element}\n"
+                    f"You are a professional writer. Write high-quality paragraphs, avoid lists, and do not use markdown. "
+                    f"Consider the previous prompt that was already covered, don't repeat things covered in this prompt: '{previous_prompt}', this is only given to maintain context."
+                )
+
+                agent2_response = await agente2.add_instruction(agent2_instruction + "\nEscribe en español.")
+
+                if agent2_response is not None:
+                    subtitle = list(response_json.keys())[i]
+                    pdf_content_data[subtitle] = agent2_response
+
+                    print(agent2_response + "\n\n")
+                    previous_prompt = element
+
+                else:
+                    print(f"Error: agent2 did not return a response for prompt {i+1}. Skipping this prompt.")
+
+            # Guardar en Documentos del sistema operativo
+            # Obtener la ruta de la carpeta "Documentos"
+            documentos_path = os.path.join(os.path.expanduser("~"), "Documents\\Docsaicg\\pdf")
+
+            # Asegurarse de que la carpeta existe (por si acaso)
+            if not os.path.exists(documentos_path):
+                os.makedirs(documentos_path)  # Crear la carpeta si no existe
+
+            print(documentos_path, "DOCUMENTOS PATH")
+
+            # Se crean las carpetas docs/pdf si no existen, directorios personalizados en el mismo proyecto
+            # os.makedirs("./docs/pdf/", exist_ok=True) 
+
+            # --- Generar archivo PDF ---
+            pdf_filename = documentos_path + "\\" + title_value + ".pdf"
+            print("Generating PDF file: ", pdf_filename, "...")
+            create_pdf(pdf_filename, title_value, pdf_content_data)
+
+            # Renombrar el archivo para evitar que se muestre como "(anonymous)" en el header tab del navegador al abrirlo
+            # Construir la nueva ruta del archivo
+            new_pdf_filename = os.path.join(documentos_path, title_value + ".pdf")
+            os.rename(pdf_filename, new_pdf_filename) #rename the file once it has been saved to ensure the file has the right name
+            
+            print(f"Tu documento sobre {title_value}, ha sido creado y guardado exitosamente.")
+            
+        except Exception as e:
+            print("Ocurrió une error: ", e)
+
+
+
+mode = False # True para el modo de asistente interactivo, False para el modo carga de archivo (tomará los archivos del directorio inputs)
+
 if __name__ == "__main__":
-    asyncio.run(runai())
+    if (mode):
+        asyncio.run(runai()) # Asistente de IA interactivo
+    else:
+        asyncio.run(runaiload()) # Procesamiento de archivos cargados
